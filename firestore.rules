@@ -1,0 +1,66 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: reservations
+    // Fields:
+    //   - courtId: string (required) - 0-7
+    //   - customerName: string (required) - max 100 chars
+    //   - phone: string (optional) - max 20 chars
+    //   - startTime: string (required) - ISO 8601
+    //   - endTime: string (required) - ISO 8601
+    //   - status: string (optional) - enum: pending, confirmed, cancelled
+    //   - createdAt: string (optional) - ISO 8601
+    //
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidDateString(dateStr) {
+      return dateStr is string && dateStr.matches("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*Z?$");
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.email == "info@embeddedlinuxgroup.com" && 
+        request.auth.token.email_verified == true
+      );
+    }
+
+    // Domain Validator for Reservation
+    function isValidReservation(data) {
+      return data.keys().hasAll(['courtId', 'customerName', 'startTime', 'endTime']) &&
+             data.courtId is string && data.courtId.size() >= 1 && data.courtId.size() <= 10 &&
+             data.customerName is string && data.customerName.size() > 0 && data.customerName.size() <= 100 &&
+             isValidDateString(data.startTime) &&
+             isValidDateString(data.endTime) &&
+             (!('status' in data) || data.status in ['pending', 'confirmed', 'cancelled']) &&
+             (!('phone' in data) || (data.phone is string && data.phone.size() <= 20));
+    }
+
+    match /reservations/{reservationId} {
+      // Players can read all reservations to see availability
+      allow read: if true;
+      
+      // Anyone can create a reservation (prototype mode, usually would be auth'd)
+      allow create: if isValidReservation(request.resource.data);
+      
+      // Only admins or owners (if we had auth) can update/delete
+      allow update, delete: if isAdmin();
+    }
+
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}

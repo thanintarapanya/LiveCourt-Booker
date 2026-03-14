@@ -1,0 +1,50 @@
+{
+  "entities": {
+    "Reservation": {
+      "title": "Reservation",
+      "description": "A court reservation made by a player.",
+      "type": "object",
+      "properties": {
+        "courtId": {
+          "type": "string",
+          "description": "The ID of the court (0-7)."
+        },
+        "customerName": {
+          "type": "string",
+          "description": "Name of the player."
+        },
+        "phone": {
+          "type": "string",
+          "description": "Phone number of the player."
+        },
+        "startTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO string of start time."
+        },
+        "endTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO string of end time."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "confirmed", "cancelled"],
+          "description": "Status of the reservation."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the reservation was created."
+        }
+      },
+      "required": ["courtId", "customerName", "startTime", "endTime"]
+    }
+  },
+  "firestore": {
+    "reservations": {
+      "schema": "Reservation",
+      "description": "Collection of court reservations."
+    }
+  }
+}

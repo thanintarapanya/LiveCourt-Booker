@@ -1,5 +1,5 @@
 {
-  "name": "CourtFlow Player App",
+  "name": "Livecourt",
   "description": "Mobile reservation app for badminton players, synced with CourtFlow Owner & Staff dashboard via Firebase.",
   "requestFramePermissions": []
 }

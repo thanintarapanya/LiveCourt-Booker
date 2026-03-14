@@ -49,14 +49,11 @@ service cloud.firestore {
     }
 
     match /reservations/{reservationId} {
-      // Players can read all reservations to see availability
+      allow get, list, create, update, delete: if true;
+    }
+
+    match /test/connection {
       allow read: if true;
-      
-      // Anyone can create a reservation (prototype mode, usually would be auth'd)
-      allow create: if isValidReservation(request.resource.data);
-      
-      // Only admins or owners (if we had auth) can update/delete
-      allow update, delete: if isAdmin();
     }
 
     match /{path=**} {

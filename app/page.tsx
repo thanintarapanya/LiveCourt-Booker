@@ -1,8 +1,10 @@
 'use client'
 
 import React, { useState, useRef } from 'react'
-import { Calendar, Map, Info, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react'
+import { Calendar, Map, Info, ChevronLeft, ChevronRight, CheckCircle2, LogIn, LogOut } from 'lucide-react'
 import { motion, AnimatePresence } from 'motion/react'
+import { signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, User } from 'firebase/auth'
+import { auth } from '@/lib/firebase'
 import ReservationTable from '@/components/ReservationTable'
 import CourtLayout from '@/components/CourtLayout'
 import ReservationConditions from '@/components/ReservationConditions'
@@ -15,11 +17,35 @@ export default function Page() {
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [mounted, setMounted] = useState(false)
   const [isCalendarOpen, setIsCalendarOpen] = useState(false)
+  const [user, setUser] = useState<User | null>(null)
 
   React.useEffect(() => {
     const timer = setTimeout(() => setMounted(true), 0)
-    return () => clearTimeout(timer)
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user)
+    })
+    return () => {
+      clearTimeout(timer)
+      unsubscribe()
+    }
   }, [])
+
+  const handleLogin = async () => {
+    const provider = new GoogleAuthProvider()
+    try {
+      await signInWithPopup(auth, provider)
+    } catch (error) {
+      console.error('Login error:', error)
+    }
+  }
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth)
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
+  }
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -65,14 +91,36 @@ export default function Page() {
           </div>
           <h1 className="font-bold text-lg tracking-tight">CourtFlow</h1>
         </div>
-        <a 
-          href="https://courtflow.io" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="text-xs font-semibold text-orange-600 bg-orange-50 px-2 py-1 rounded border border-orange-200"
-        >
-          Staff Login
-        </a>
+        <div className="flex items-center gap-3">
+          {user ? (
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold text-gray-400 uppercase hidden sm:inline">{user.displayName?.split(' ')[0]}</span>
+              <button 
+                onClick={handleLogout}
+                className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors"
+                title="Logout"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <button 
+              onClick={handleLogin}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 text-orange-600 rounded-lg border border-orange-100 hover:bg-orange-100 transition-colors text-xs font-bold"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Login</span>
+            </button>
+          )}
+          <a 
+            href="https://courtflow.io" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-[10px] font-bold text-gray-400 uppercase hover:text-gray-600 transition-colors"
+          >
+            Staff
+          </a>
+        </div>
       </header>
 
       {/* Date Picker (Only for Table Tab) */}
